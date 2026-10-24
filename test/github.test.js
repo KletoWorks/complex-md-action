@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { fakeGitHub } from './helpers.js';
-import { client, readMap, listFiles, commitsBehind, findSticky, syncSticky, contentsPath } from '../src/github.js';
+import { client, readFileAt, listFiles, commitsBehind, findSticky, syncSticky, contentsPath } from '../src/github.js';
 import { MARKER } from '../src/comment.js';
 
 const repo = 'acme/app';
@@ -12,7 +12,7 @@ const gh = (routes) => {
 
 test('requests carry the token, the API version and a user agent', async () => {
   const { fake, gh: g } = gh({ 'GET /repos/acme/app/contents/COMPLEX.md': () => ({ body: '---\n---\n' }) });
-  await readMap(g, repo, 'COMPLEX.md', 'base123');
+  await readFileAt(g, repo, 'COMPLEX.md', 'base123');
   const h = fake.calls[0].headers;
   assert.equal(h.authorization, 'Bearer t0k');
   assert.equal(h['x-github-api-version'], '2022-11-28');
@@ -23,9 +23,9 @@ test('requests carry the token, the API version and a user agent', async () => {
 
 test('a missing map reads as null and other errors throw', async () => {
   const { gh: g } = gh({});
-  assert.equal(await readMap(g, repo, 'COMPLEX.md', 'b'), null);
+  assert.equal(await readFileAt(g, repo, 'COMPLEX.md', 'b'), null);
   const { gh: g2 } = gh({ 'GET /repos/acme/app/contents/COMPLEX.md': () => ({ status: 500, body: { message: 'boom' } }) });
-  await assert.rejects(readMap(g2, repo, 'COMPLEX.md', 'b'), /500/);
+  await assert.rejects(readFileAt(g2, repo, 'COMPLEX.md', 'b'), /500/);
 });
 
 test('the map path is encoded per segment and may not climb out', () => {

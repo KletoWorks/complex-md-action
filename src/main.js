@@ -5,7 +5,7 @@ import { pathToFileURL } from 'node:url';
 import { parseComplexMd } from './vendor/complexmd.js';
 import { findTouched } from './findings.js';
 import { renderComment, renderCleared } from './comment.js';
-import { client, readMap, listFiles, commitsBehind, syncSticky } from './github.js';
+import { client, readFileAt, listFiles, commitsBehind, syncSticky } from './github.js';
 
 const EVENTS = new Set(['pull_request_target', 'pull_request']);
 
@@ -70,7 +70,7 @@ async function comment({ env, fetch, say, event, pr }) {
   const mapPath = input(env, 'map-path', 'COMPLEX.md');
   const baseSha = pr.base?.sha;
   const gh = client({ token: input(env, 'github-token'), apiUrl: env.GITHUB_API_URL || 'https://api.github.com', fetch });
-  const text = await readMap(gh, repo, mapPath, baseSha);
+  const text = await readFileAt(gh, repo, mapPath, baseSha);
   if (text === null) {
     say('notice', `No ${mapPath} on the base branch at ${String(baseSha).slice(0, 7)}. Generate one with: npx complex-md`);
     setOutputs(env, { hotspots: 0, 'load-bearing': 0, partners: 0, comment: 'none', 'comment-url': '' });

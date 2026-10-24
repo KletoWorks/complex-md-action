@@ -64,8 +64,8 @@ export function contentsPath(p) {
   return parts.map(encodeURIComponent).join('/');
 }
 
-/* The map as text at one commit of the base repository, or null. */
-export async function readMap(gh, repo, path, ref) {
+/* A text file at one commit of the base repository, or null. */
+export async function readFileAt(gh, repo, path, ref) {
   const p = `/repos/${repo}/contents/${contentsPath(path)}`;
   const r = await gh.request('GET', p, { accept: 'application/vnd.github.raw+json', query: { ref } });
   if (r.status === 404) return null;
