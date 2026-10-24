@@ -65,9 +65,8 @@ does:
   it that way.
 - It asks for `contents: read` and `pull-requests: write`, nothing more.
 
-One run makes three or four REST reads, more for a long file list, and one
-write at most. This follows
-the GitHub Security Lab guidance on
+One run makes three to five REST reads, more for a long file list, and one
+write at most. This follows the GitHub Security Lab guidance on
 [preventing pwn requests](https://securitylab.github.com/resources/github-actions-preventing-pwn-requests/).
 
 ## Bounds: fail the pull request that reaches too far
