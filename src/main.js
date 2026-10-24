@@ -6,24 +6,14 @@ import { parseComplexMd } from './vendor/complexmd.js';
 import { findTouched } from './findings.js';
 import { renderComment, renderCleared } from './comment.js';
 import { client, readFileAt, listFiles, commitsBehind, syncSticky } from './github.js';
+import { runBounds } from './bounds.js';
+import { input, boolInput } from './inputs.js';
 
 const EVENTS = new Set(['pull_request_target', 'pull_request']);
 
 /* Workflow command data: a line break or percent sign in a message would
    otherwise end the command or start a new one. */
 export const escapeData = (s) => String(s).replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
-
-export function input(env, name, fallback = '') {
-  const v = env[`INPUT_${name.replace(/ /g, '_').toUpperCase()}`];
-  return v === undefined || v.trim() === '' ? fallback : v.trim();
-}
-
-export function boolInput(env, name, fallback) {
-  const v = input(env, name, String(fallback)).toLowerCase();
-  if (v === 'true') return true;
-  if (v === 'false') return false;
-  throw new Error(`input ${name} must be true or false, got: ${JSON.stringify(v)}`);
-}
 
 function setOutputs(env, outputs) {
   if (!env.GITHUB_OUTPUT) return;
@@ -58,6 +48,10 @@ export async function run({ env = process.env, fetch = globalThis.fetch, log = c
     }
     let code = 0;
     if (wantComment) code = Math.max(code, await comment({ env, fetch, say, event, pr }));
+    if (wantImpact || wantVerify) {
+      const gh = client({ token: input(env, 'github-token'), apiUrl: env.GITHUB_API_URL || 'https://api.github.com', fetch });
+      code = Math.max(code, await runBounds({ env, gh, say, pr, wantImpact, wantVerify }));
+    }
     return code;
   } catch (e) {
     say('error', `complex-md-action: ${e.message}`);

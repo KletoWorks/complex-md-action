@@ -140,3 +140,11 @@ test('an input that is not true or false is refused', async () => {
   assert.equal(await go(s), 1);
   assert.ok(s.logs.some((l) => l.includes('comment')));
 });
+
+test('impact-strict on pull_request runs the bounds check', async () => {
+  const s = setup({ event: 'pull_request', inputs: { comment: 'false', 'impact-strict': 'true' }, files: [{ filename: 'lib/server.js' }] });
+  s.env.GITHUB_WORKSPACE = mkdtempSync(join(tmpdir(), 'cmda-nogit-'));
+  assert.equal(await go(s), 1);
+  assert.ok(s.logs.some((l) => l.startsWith('::error::') && l.includes('actions/checkout')));
+  assert.equal(s.fake.calls.length, 0);
+});

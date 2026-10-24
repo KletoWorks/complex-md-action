@@ -17,6 +17,9 @@ inputs:
   impact-strict:
     description: Run complex-md impact --strict on each changed file against .complex-md/bounds.json. pull_request jobs only.
     default: "false"
+  impact-max-files:
+    description: Most changed files impact-strict checks in one run. Each file is one CLI run.
+    default: "25"
   verify:
     description: Run complex-md verify, the map drift check. pull_request jobs only.
     default: "false"

@@ -17,7 +17,7 @@ test('action.yml runs src/main.js on node24', () => {
 });
 
 test('every input the code reads is declared, and every declared input is read', () => {
-  const read = [...new Set([...src.matchAll(/(?:input|boolInput)\(env, '([\w-]+)'/g)].map((m) => m[1]))].sort();
+  const read = [...new Set([...src.matchAll(/(?:input|boolInput|intInput)\(env, '([\w-]+)'/g)].map((m) => m[1]))].sort();
   assert.deepEqual(read, declared('inputs'));
 });
 
