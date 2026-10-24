@@ -68,6 +68,7 @@ test('the cleared comment keeps the marker and says nothing is touched', () => {
   const body = renderCleared(ctx);
   assert.ok(body.startsWith(MARKER + '\n'));
   assert.match(body, /no longer touches a hotspot, a load bearing file or a co-change pair/);
+  assert.doesNotMatch(body, /behind|generated/);
 });
 
 test('a very long comment is cut below the GitHub limit', () => {

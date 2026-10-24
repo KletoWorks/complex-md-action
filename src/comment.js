@@ -89,6 +89,8 @@ export function renderComment(f, ctx = {}) {
   return body;
 }
 
-export function renderCleared(ctx = {}) {
-  return [MARKER, '**COMPLEX.md**: this pull request no longer touches a hotspot, a load bearing file or a co-change pair.', '', footer(ctx)].join('\n');
+/* The cleared comment leaves out the map's lag, so it does not change
+   each time the base branch moves. */
+export function renderCleared({ baseSha, mapPath } = {}) {
+  return [MARKER, '**COMPLEX.md**: this pull request no longer touches a hotspot, a load bearing file or a co-change pair.', '', footer({ baseSha, mapPath })].join('\n');
 }
