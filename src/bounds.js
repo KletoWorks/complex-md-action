@@ -13,6 +13,9 @@ import { code } from './comment.js';
 import { intInput } from './inputs.js';
 
 export const BOUNDS_PATH = '.complex-md/bounds.json';
+/* The CLI reads the map at the root of its working directory, whatever
+   map-path the comment job uses. */
+export const MAP_PATH = 'COMPLEX.md';
 export const DEFAULT_MAX_FILES = 25;
 const TIMEOUT_MS = 300000;
 
@@ -93,24 +96,39 @@ async function impact({ env, gh, say, pr, ws, cli, summary }) {
   }
   if (prEditsBounds) say('notice', `This pull request edits ${BOUNDS_PATH}. The check uses the base branch bounds; the new bounds apply after merge.`);
 
+  const prEditsMap = files.some((f) => f?.filename === MAP_PATH || f?.previous_filename === MAP_PATH);
+  if (prEditsMap) say('notice', `This pull request edits ${MAP_PATH}. The check uses the base branch map; the new map applies after merge.`);
+
   const { run, skipped } = impactTargets(ws, files, intInput(env, 'impact-max-files', DEFAULT_MAX_FILES));
-  const target = join(ws, BOUNDS_PATH);
-  /* The base bounds are written into the checkout for the CLI to read.
-     A pull request that makes the directory or the file a symlink would
-     point that write outside the checkout, so a symlink stops the check. */
-  for (const p of [dirname(target), target]) {
-    if (isSymlink(p)) {
-      say('error', `${p === target ? BOUNDS_PATH : dirname(BOUNDS_PATH)} is a symlink in this pull request. The bounds check does not write through a symlink.`);
+  /* The CLI reads the bounds and the map from the checkout. Both are
+     swapped for their base branch copies during the run, so a pull request
+     cannot loosen its check by editing either one. A file the base lacks is
+     set aside. A pull request that makes a path or its directory a symlink
+     would point the write outside the checkout, so a symlink stops the check. */
+  const swaps = [
+    { rel: BOUNDS_PATH, base },
+    { rel: MAP_PATH, base: await readFileAt(gh, repo, MAP_PATH, pr.base?.sha) },
+  ];
+  for (const sw of swaps) {
+    const target = join(ws, sw.rel);
+    const dir = dirname(sw.rel) === '.' ? null : dirname(sw.rel);
+    const link = isSymlink(target) ? sw.rel : dir && isSymlink(join(ws, dir)) ? dir : null;
+    if (link) {
+      say('error', `${link} is a symlink in this pull request. The bounds check does not write through a symlink.`);
       return 1;
     }
+    Object.assign(sw, { target, saved: existsSync(target) ? readFileSync(target) : null, dirExisted: existsSync(dirname(target)) });
   }
-  const saved = existsSync(target) ? readFileSync(target) : null;
-  const dirExisted = existsSync(dirname(target));
   const results = [];
   let status = 0;
   try {
-    mkdirSync(dirname(target), { recursive: true });
-    writeFileSync(target, base);
+    for (const sw of swaps) {
+      if (sw.base === null) rmSync(sw.target, { force: true });
+      else {
+        mkdirSync(dirname(sw.target), { recursive: true });
+        writeFileSync(sw.target, sw.base);
+      }
+    }
     for (const p of run) {
       const r = cli(['impact', p, '--strict', '--json']);
       if (r.status !== 0 && r.status !== 1) {
@@ -132,11 +150,12 @@ async function impact({ env, gh, say, pr, ws, cli, summary }) {
       }
     }
   } finally {
-    if (saved === null) {
-      rmSync(target, { force: true });
-      if (!dirExisted) rmSync(dirname(target), { recursive: true, force: true });
-    } else {
-      writeFileSync(target, saved);
+    for (const sw of swaps) {
+      if (sw.saved !== null) writeFileSync(sw.target, sw.saved);
+      else {
+        rmSync(sw.target, { force: true });
+        if (!sw.dirExisted) rmSync(dirname(sw.target), { recursive: true, force: true });
+      }
     }
   }
   if (skipped) say('notice', `${skipped} more changed files were not checked. Raise impact-max-files to check them.`);

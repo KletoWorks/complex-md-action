@@ -13,7 +13,7 @@ import { runBounds, childEnv, impactTargets } from '../src/bounds.js';
 const STUB = `
 import { readFileSync, appendFileSync, existsSync } from 'node:fs';
 const args = process.argv.slice(2);
-appendFileSync('calls.log', JSON.stringify({ args, envKeys: Object.keys(process.env), bounds: existsSync('.complex-md/bounds.json') ? readFileSync('.complex-md/bounds.json', 'utf8') : null }) + '\\n');
+appendFileSync('calls.log', JSON.stringify({ args, envKeys: Object.keys(process.env), bounds: existsSync('.complex-md/bounds.json') ? readFileSync('.complex-md/bounds.json', 'utf8') : null, map: existsSync('COMPLEX.md') ? readFileSync('COMPLEX.md', 'utf8') : null }) + '\\n');
 if (args[0] === '--help') { console.log(existsSync('has-verify') ? 'npx complex-md verify   drift check' : 'npx complex-md impact <path>'); process.exit(0); }
 if (args[0] === 'verify') { const bad = existsSync('verify-fails'); console.log(bad ? 'map is stale' : 'map is fresh'); process.exit(bad ? 1 : 0); }
 if (args[0] === 'impact') {
@@ -32,7 +32,7 @@ process.exit(9);
 
 const BASE = 'bace000000000000000000000000000000000001';
 
-function setup({ files, baseBounds = '{"reach": 5}', headBounds, reach = {}, verify = false, verifyFails = false, inputs = {} }) {
+function setup({ files, baseBounds = '{"reach": 5}', headBounds, baseMap = null, headMap, reach = {}, verify = false, verifyFails = false, inputs = {} }) {
   const ws = mkdtempSync(join(tmpdir(), 'cmda-ws-'));
   mkdirSync(join(ws, '.git'));
   const bin = join(ws, '..', `stub-${process.hrtime.bigint()}.mjs`);
@@ -49,8 +49,10 @@ function setup({ files, baseBounds = '{"reach": 5}', headBounds, reach = {}, ver
     mkdirSync(join(ws, '.complex-md'), { recursive: true });
     writeFileSync(join(ws, '.complex-md/bounds.json'), headBounds);
   }
+  if (headMap !== undefined) writeFileSync(join(ws, 'COMPLEX.md'), headMap);
   const fake = fakeGitHub({
     'GET /repos/acme/app/pulls/7/files': () => ({ body: files }),
+    'GET /repos/acme/app/contents/COMPLEX.md': ({ query }) => (baseMap === null || query.ref !== BASE ? { status: 404, body: {} } : { body: baseMap }),
     'GET /repos/acme/app/contents/.complex-md/bounds.json': ({ query }) => (baseBounds === null || query.ref !== BASE ? { status: 404, body: {} } : { body: baseBounds }),
   });
   const logs = [];
@@ -95,6 +97,35 @@ test('the base branch bounds apply, and the pull request copy is restored after'
   assert.ok(s.calls().filter((c) => c.args[0] === 'impact').every((c) => c.bounds === '{"reach": 5}'));
   assert.equal(readFileSync(join(s.ws, '.complex-md/bounds.json'), 'utf8'), '{"reach": 100}');
   assert.ok(s.logs.some((l) => l.startsWith('notice: ') && l.includes('apply after merge')));
+});
+
+test('the base branch map applies, and the pull request copy is restored after', async () => {
+  const s = setup({ files: [mod('lib/a.js'), mod('COMPLEX.md')], baseMap: 'base map', headMap: 'pr map' });
+  assert.equal(await runBounds({ ...s.ctx, wantImpact: true, wantVerify: false }), 0);
+  const impact = s.calls().filter((c) => c.args[0] === 'impact');
+  assert.deepEqual(impact.map((c) => c.args[1]), ['lib/a.js', 'COMPLEX.md']);
+  assert.ok(impact.every((c) => c.map === 'base map'));
+  assert.equal(readFileSync(join(s.ws, 'COMPLEX.md'), 'utf8'), 'pr map');
+  assert.ok(s.logs.some((l) => l.startsWith('notice: ') && l.includes('edits COMPLEX.md')));
+});
+
+test('a map that only the pull request adds is set aside during the check', async () => {
+  const s = setup({ files: [mod('lib/a.js'), mod('COMPLEX.md', 'added')], headMap: 'pr map' });
+  assert.equal(await runBounds({ ...s.ctx, wantImpact: true, wantVerify: false }), 0);
+  assert.ok(s.calls().filter((c) => c.args[0] === 'impact').every((c) => c.map === null));
+  assert.equal(readFileSync(join(s.ws, 'COMPLEX.md'), 'utf8'), 'pr map');
+});
+
+test('a map that is a symlink is refused', async () => {
+  const { symlinkSync } = await import('node:fs');
+  const s = setup({ files: [mod('lib/a.js')], baseMap: 'base map' });
+  const outside = mkdtempSync(join(tmpdir(), 'cmda-outside-'));
+  writeFileSync(join(outside, 'victim'), 'keep');
+  symlinkSync(join(outside, 'victim'), join(s.ws, 'COMPLEX.md'));
+  assert.equal(await runBounds({ ...s.ctx, wantImpact: true, wantVerify: false }), 1);
+  assert.ok(s.logs.some((l) => l.startsWith('error: ') && l.includes('COMPLEX.md is a symlink')));
+  assert.equal(readFileSync(join(outside, 'victim'), 'utf8'), 'keep');
+  assert.equal(s.calls().filter((c) => c.args[0] === 'impact').length, 0);
 });
 
 test('a base branch with no bounds file checks nothing and says so', async () => {

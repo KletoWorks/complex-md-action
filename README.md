@@ -86,8 +86,9 @@ three files took 3.1 s, including the CLI download.
 
 - It runs on `pull_request` with a read only token, because it reads the
   pull request's files. The action refuses it under `pull_request_target`.
-- The bounds come from the base branch. A pull request cannot loosen its own
-  check; its new bounds apply after merge.
+- The bounds and COMPLEX.md come from the base branch. A pull request
+  cannot loosen its own check by editing either one; its new copies apply
+  after merge.
 - The CLI is complex-md 0.9.2, checked against the sha512 integrity that npm
   published for it. It runs with no token in its env.
 - `verify: true` runs `complex-md verify`, the map drift check, once the

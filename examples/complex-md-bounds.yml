@@ -3,8 +3,9 @@
 #   { "reach": 25, "untested_reach": 5, "hot_reach": 3 }
 #
 # This job reads the pull request's files, so it runs on pull_request with
-# a read only token, never on pull_request_target. The bounds come from
-# the base branch, so a pull request cannot loosen its own check.
+# a read only token, never on pull_request_target. The bounds and the
+# map come from the base branch, so a pull request cannot loosen its own
+# check.
 name: complex-md bounds
 
 on:
