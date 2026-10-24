@@ -1,0 +1,36 @@
+name: complex-md PR check
+description: One pull request comment when a change touches a COMPLEX.md hotspot or leaves a co-change partner unchanged.
+author: James L. Cowan Jr.
+branding:
+  icon: map
+  color: orange
+inputs:
+  github-token:
+    description: Token for the GitHub REST API. The comment needs pull-requests write.
+    default: ${{ github.token }}
+  map-path:
+    description: Path of the map in the base branch.
+    default: COMPLEX.md
+  comment:
+    description: Post or update the sticky comment. Reads the map from the base branch only.
+    default: "true"
+  impact-strict:
+    description: Run complex-md impact --strict on each changed file against .complex-md/bounds.json. pull_request jobs only.
+    default: "false"
+  verify:
+    description: Run complex-md verify, the map drift check. pull_request jobs only.
+    default: "false"
+outputs:
+  hotspots:
+    description: Number of hotspots the pull request touches.
+  load-bearing:
+    description: Number of load bearing files the pull request touches.
+  partners:
+    description: Number of co-change partners the pull request leaves unchanged.
+  comment:
+    description: "What happened to the comment: created, updated, unchanged, cleared, none or forbidden."
+  comment-url:
+    description: URL of the comment, when there is one.
+runs:
+  using: node24
+  main: src/main.js
