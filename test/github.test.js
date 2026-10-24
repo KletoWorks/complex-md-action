@@ -127,3 +127,25 @@ test('a pull request that became clean gets its comment cleared', async () => {
   assert.deepEqual(r, { action: 'cleared', url: 'u3' });
   assert.equal(fake.calls.at(-1).body.body, `${MARKER}\nclear`);
 });
+
+test('with a personal token the sticky comment is the one its owner wrote', async () => {
+  const { fake, gh: g } = gh({
+    ...comments([
+      { id: 1, body: `${MARKER}\nby someone else`, user: { type: 'User', login: 'someone' } },
+      { id: 4, body: `${MARKER}\nours`, user: { type: 'User', login: 'release-bot-account' } },
+    ]),
+    'GET /user': () => ({ body: { login: 'release-bot-account' } }),
+  });
+  assert.equal((await findSticky(g, repo, 7)).id, 4);
+  assert.equal(fake.calls.filter((c) => c.path === '/user').length, 1);
+});
+
+test('the token owner is looked up only when no bot comment carries the marker', async () => {
+  const { fake, gh: g } = gh({
+    ...comments([{ id: 3, body: `${MARKER}\nours`, user: bot }, { id: 8, body: 'hi', user: { type: 'User', login: 'x' } }]),
+  });
+  await findSticky(g, repo, 7);
+  assert.equal(fake.calls.some((c) => c.path === '/user'), false);
+  const { gh: g2 } = gh({ ...comments([{ id: 1, body: `${MARKER}\nplanted`, user: { type: 'User', login: 'someone' } }]) });
+  assert.equal(await findSticky(g2, repo, 7), null);
+});

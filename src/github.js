@@ -89,11 +89,19 @@ export async function commitsBehind(gh, repo, mapCommit, baseSha) {
   return null;
 }
 
-/* Only a bot comment that opens with the marker counts. A person who
-   pastes the marker into their own comment does not take over the slot. */
+/* The comment this token wrote that opens with the marker. The default
+   token and GitHub App tokens write as a bot, so a bot comment counts. A
+   personal token writes as its owner, whose login GET /user gives; the
+   default token cannot call it, so it is asked only when no bot comment
+   matches. A person who pastes the marker does not take over the slot. */
 export async function findSticky(gh, repo, number) {
   const list = await gh.paginate(`/repos/${repo}/issues/${number}/comments`);
-  return list.find((c) => c?.user?.type === 'Bot' && typeof c.body === 'string' && c.body.startsWith(MARKER + '\n')) || null;
+  const marked = list.filter((c) => typeof c?.body === 'string' && c.body.startsWith(MARKER + '\n'));
+  const fromBot = marked.find((c) => c?.user?.type === 'Bot');
+  if (fromBot || !marked.length) return fromBot || null;
+  const me = await gh.request('GET', '/user');
+  const login = me.ok ? me.json?.login : null;
+  return (login && marked.find((c) => c?.user?.login === login)) || null;
 }
 
 /* Create, edit, clear or leave the one comment. body null means the pull
