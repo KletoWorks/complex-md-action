@@ -57,7 +57,8 @@ function httpError(method, path, r) {
    the workflow file, but a path that climbs out of the repository or
    starts at the root is a mistake worth stopping on. */
 export function contentsPath(p) {
-  const parts = String(p || '').split('/');
+  p = String(p || '').replace(/^(\.\/)+/, '');
+  const parts = p.split('/');
   if (!p || p.startsWith('/') || parts.some((s) => s === '' || s === '.' || s === '..')) {
     throw new Error(`map-path must be a relative path inside the repository, got: ${JSON.stringify(p)}`);
   }

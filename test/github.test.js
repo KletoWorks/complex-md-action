@@ -30,6 +30,7 @@ test('a missing map reads as null and other errors throw', async () => {
 
 test('the map path is encoded per segment and may not climb out', () => {
   assert.equal(contentsPath('docs/COMPLEX map.md'), 'docs/COMPLEX%20map.md');
+  assert.equal(contentsPath('./COMPLEX.md'), 'COMPLEX.md');
   assert.throws(() => contentsPath('../COMPLEX.md'), /map-path/);
   assert.throws(() => contentsPath('/COMPLEX.md'), /map-path/);
   assert.throws(() => contentsPath(''), /map-path/);
