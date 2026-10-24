@@ -8,9 +8,9 @@ import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 
 export const CLI = {
-  version: '0.9.2',
-  tarball: 'https://registry.npmjs.org/complex-md/-/complex-md-0.9.2.tgz',
-  integrity: 'sha512-zbf/7kD0r5IZs/3as7i3gmQ0ghURiT+cXMz4V04B7WQxwp6t0+ck2AiT5rdRcmxPh2I+U7rU+e9rHPViLo+gPw==',
+  version: '0.10.0',
+  tarball: 'https://registry.npmjs.org/complex-md/-/complex-md-0.10.0.tgz',
+  integrity: 'sha512-7Ji9EjPSlICo+tsocr1EJtY/UlX5Qi/0F9+T0t7/CrIg+H+Y9RC8NUDbP1KzVjG7Lb3uzRCRqg+ClAHgGgMaBw==',
 };
 
 export const integrityOf = (bytes) => 'sha512-' + createHash('sha512').update(bytes).digest('base64');
