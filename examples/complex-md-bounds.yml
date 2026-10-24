@@ -1,0 +1,30 @@
+# Fail a pull request when a changed file reaches past the bounds in
+# .complex-md/bounds.json, for example:
+#   { "reach": 25, "untested_reach": 5, "hot_reach": 3 }
+#
+# This job reads the pull request's files, so it runs on pull_request with
+# a read only token, never on pull_request_target. The bounds come from
+# the base branch, so a pull request cannot loosen its own check.
+name: complex-md bounds
+
+on:
+  pull_request:
+
+permissions: {}
+
+jobs:
+  bounds:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # verify reads history; impact needs only the tree.
+          fetch-depth: 0
+      - uses: KletoWorks/complex-md-action@RELEASE_COMMIT_SHA # v0.1.0
+        with:
+          comment: false
+          impact-strict: true
