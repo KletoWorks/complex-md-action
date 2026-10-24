@@ -159,3 +159,22 @@ test('a workspace with no checkout is an error', async () => {
   assert.equal(await runBounds({ ...s.ctx, wantImpact: true, wantVerify: false }), 1);
   assert.ok(s.logs.some((l) => l.includes('actions/checkout')));
 });
+
+test('a bounds path that is a symlink is refused and nothing is written through it', async () => {
+  const { symlinkSync, mkdtempSync: mk } = await import('node:fs');
+  for (const kind of ['dir', 'file']) {
+    const s = setup({ files: [mod('lib/a.js')] });
+    const outside = mk(join(tmpdir(), 'cmda-outside-'));
+    if (kind === 'dir') symlinkSync(outside, join(s.ws, '.complex-md'));
+    else {
+      mkdirSync(join(s.ws, '.complex-md'));
+      writeFileSync(join(outside, 'victim'), 'keep');
+      symlinkSync(join(outside, 'victim'), join(s.ws, '.complex-md/bounds.json'));
+    }
+    assert.equal(await runBounds({ ...s.ctx, wantImpact: true, wantVerify: false }), 1, kind);
+    assert.ok(s.logs.some((l) => l.startsWith('error: ') && l.includes('symlink')), kind);
+    assert.equal(existsSync(join(outside, 'bounds.json')), false, kind);
+    if (kind === 'file') assert.equal(readFileSync(join(outside, 'victim'), 'utf8'), 'keep');
+    assert.equal(s.calls().filter((c) => c.args[0] === 'impact').length, 0, kind);
+  }
+});

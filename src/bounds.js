@@ -3,7 +3,7 @@
 // files, so they belong in a pull_request job with a read only token and
 // never in pull_request_target. The CLI runs with process.execPath and an
 // argument list, never through a shell, and with no token in its env.
-import { existsSync, readFileSync, writeFileSync, mkdirSync, rmSync, appendFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, rmSync, appendFileSync, lstatSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
@@ -40,6 +40,10 @@ export function impactTargets(ws, files, max) {
     if (!run.includes(p)) run.push(p);
   }
   return { run: run.slice(0, max), skipped: Math.max(0, run.length - max) };
+}
+
+function isSymlink(p) {
+  try { return lstatSync(p).isSymbolicLink(); } catch { return false; }
 }
 
 /* Workflow command properties: a comma or colon would end the value. */
@@ -91,6 +95,15 @@ async function impact({ env, gh, say, pr, ws, cli, summary }) {
 
   const { run, skipped } = impactTargets(ws, files, intInput(env, 'impact-max-files', DEFAULT_MAX_FILES));
   const target = join(ws, BOUNDS_PATH);
+  /* The base bounds are written into the checkout for the CLI to read.
+     A pull request that makes the directory or the file a symlink would
+     point that write outside the checkout, so a symlink stops the check. */
+  for (const p of [dirname(target), target]) {
+    if (isSymlink(p)) {
+      say('error', `${p === target ? BOUNDS_PATH : dirname(BOUNDS_PATH)} is a symlink in this pull request. The bounds check does not write through a symlink.`);
+      return 1;
+    }
+  }
   const saved = existsSync(target) ? readFileSync(target) : null;
   const dirExisted = existsSync(dirname(target));
   const results = [];
