@@ -31,7 +31,7 @@ function footer({ baseSha, mapPath = 'COMPLEX.md', front = {}, behind, truncated
     made = ` The map was generated${front.generated ? ` ${front.generated}` : ''}`;
     if (front.commit) {
       made += ` at ${code(short(front.commit))}`;
-      if (behind === null || behind === undefined) made += ', a commit not found in the base history';
+      if (behind === null || behind === undefined) made += ', a commit not in the base history';
       else if (behind === 0) made += ', current with the base';
       else made += `, ${plural(behind, 'commit', 'commits')} behind the base`;
     }

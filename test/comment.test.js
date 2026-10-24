@@ -47,7 +47,7 @@ test('the footer names the base commit, the map commit and its lag', () => {
 
 test('an unknown lag is said plainly', () => {
   const body = renderComment(findTouched(map, diff('lib/route.js')), { ...ctx, behind: null });
-  assert.match(body, /`1234567`, a commit not found in the base history/);
+  assert.match(body, /`1234567`, a commit not in the base history/);
   const zero = renderComment(findTouched(map, diff('lib/route.js')), { ...ctx, behind: 0 });
   assert.match(zero, /`1234567`, current with the base/);
 });
