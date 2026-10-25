@@ -124,7 +124,10 @@ npm test
 
 The tests use fixture maps and file lists and a fake GitHub API. One test
 downloads the pinned CLI tarball from npm, checks it against the pin and
-runs its `--help`; it skips when the registry cannot be reached. The parser
+runs its `--help`; it skips when the registry cannot be reached.
+`package.json` names complex-md as a devDependency only so that Dependabot
+opens a pull request for each release. A test fails on that pull request
+until `src/cli.js` pins the same version and its integrity. The parser
 in `src/vendor/complexmd.js` is a copy of the CLI's, with its source commit
 in the header.
 

@@ -25,6 +25,14 @@ test('the pinned CLI is an exact version from the npm registry with a sha512 int
   assert.match(CLI.integrity, /^sha512-[A-Za-z0-9+/]{86}==$/);
 });
 
+/* package.json names complex-md only so that Dependabot opens a pull
+   request for each release; the action installs nothing. The bump fails
+   here until src/cli.js carries the same version and its integrity. */
+test('the pin in src/cli.js is the complex-md version that package.json names', () => {
+  const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  assert.equal(pkg.devDependencies?.['complex-md'], CLI.version, 'move version, tarball and integrity in src/cli.js to the version in package.json');
+});
+
 test('a tarball that matches the pin is unpacked and its bin returned', async () => {
   const t = stubTarball('console.log("stub")\n');
   const dir = mkdtempSync(join(tmpdir(), 'cmda-cli-'));

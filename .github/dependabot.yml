@@ -1,0 +1,19 @@
+# complex-md is a devDependency only so that each release opens a pull
+# request here. The action downloads the version that src/cli.js pins and
+# installs nothing; test/cli.test.js fails until that pin matches.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: daily
+    allow:
+      - dependency-name: complex-md
+    commit-message:
+      prefix: chore
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
