@@ -11,5 +11,8 @@
   },
   "scripts": {
     "test": "node --test --test-concurrency=1"
+  },
+  "devDependencies": {
+    "complex-md": "0.11.0"
   }
 }
