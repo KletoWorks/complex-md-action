@@ -5,6 +5,14 @@ Changes up to v0.1.0 are in the git history.
 
 ## Unreleased
 
+**Intent:** a map whose commit sha was all digits with a leading zero, such
+as `0179008`, was read as `179008`, so the comment named a commit that does
+not exist.
+
+**Change:** `src/vendor/complexmd.js` is copied again from complex-md main,
+which keeps an unquoted all-digit `commit` exactly as written. A test in
+`test/map.test.js` pins it.
+
 **Intent:** the bounds job ran complex-md 0.10.0 after 0.11.0 was on npm
 (published 2026-10-25), and `verify: true` warned and checked nothing,
 because 0.10.0 has no verify command

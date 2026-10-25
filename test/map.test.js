@@ -25,3 +25,9 @@ test('the vendored parser reads a real generated map', () => {
 test('a file without front matter parses to null', () => {
   assert.equal(parseComplexMd('# not a map\n'), null);
 });
+
+test('an unquoted all-digit commit keeps its leading zero', async () => {
+  const { parseComplexMd } = await import('../src/vendor/complexmd.js');
+  const text = '---\ncomplex_md: "0.3"\ncommit: 0179008\nhotspots:\nco_change:\n---\n\n## Where the risk lives\n\nx\n';
+  assert.equal(parseComplexMd(text).front.commit, '0179008');
+});
