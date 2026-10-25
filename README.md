@@ -88,10 +88,12 @@ three files took 3.1 s, including the CLI download.
 - The bounds and COMPLEX.md come from the base branch. A pull request
   cannot loosen its own check by editing either one; its new copies apply
   after merge.
-- The CLI is complex-md 0.10.0, checked against the sha512 integrity that npm
+- The CLI is complex-md 0.11.0, checked against the sha512 integrity that npm
   published for it. It runs with no token in its env.
-- `verify: true` runs `complex-md verify`, the map drift check, once the
-  pinned CLI has that command. With 0.10.0 it warns and checks nothing.
+- `verify: true` runs `complex-md verify`, the map drift check. The job
+  fails when verify exits 1, a map that drifted past tolerance, or 2, a map
+  it cannot verify. verify reads history, so the bounds example checks out
+  with `fetch-depth: 0`.
 
 ## Inputs
 
