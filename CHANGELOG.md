@@ -3,7 +3,7 @@
 Dated record of notable changes, newest on top: what changed and why.
 Changes up to v0.1.0 are in the git history.
 
-## Unreleased
+## v0.2.0 (2026-10-25)
 
 **Intent:** a map whose commit sha was all digits with a leading zero, such
 as `0179008`, was read as `179008`, so the comment named a commit that does
