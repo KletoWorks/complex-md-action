@@ -122,7 +122,9 @@ the comment says so when a pull request has more.
 npm test
 ```
 
-The tests use fixture maps and file lists and a fake GitHub API. The parser
+The tests use fixture maps and file lists and a fake GitHub API. One test
+downloads the pinned CLI tarball from npm, checks it against the pin and
+runs its `--help`; it skips when the registry cannot be reached. The parser
 in `src/vendor/complexmd.js` is a copy of the CLI's, with its source commit
 in the header.
 
