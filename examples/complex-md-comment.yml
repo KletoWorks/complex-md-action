@@ -26,5 +26,5 @@ jobs:
       pull-requests: write
     steps:
       # Pin to the full commit SHA of a release. Find it with:
-      # git ls-remote https://github.com/KletoWorks/complex-md-action refs/tags/v0.1.0
-      - uses: KletoWorks/complex-md-action@9a4d542a8747b94265716dfe8b566c701dc836b1 # v0.1.0
+      # git ls-remote https://github.com/KletoWorks/complex-md-action refs/tags/v0.2.0
+      - uses: KletoWorks/complex-md-action@c45289ecb00feaf88199bb12f48a0a2830c8c9fb # v0.2.0

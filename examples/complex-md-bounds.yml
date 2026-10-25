@@ -25,7 +25,7 @@ jobs:
           persist-credentials: false
           # verify reads history; impact needs only the tree.
           fetch-depth: 0
-      - uses: KletoWorks/complex-md-action@9a4d542a8747b94265716dfe8b566c701dc836b1 # v0.1.0
+      - uses: KletoWorks/complex-md-action@c45289ecb00feaf88199bb12f48a0a2830c8c9fb # v0.2.0
         with:
           comment: false
           impact-strict: true

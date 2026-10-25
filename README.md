@@ -38,11 +38,11 @@ push edits the same comment. A push that drops the last hot file clears it.
 3. Pin the action to the full commit SHA of a release:
 
 ```sh
-git ls-remote https://github.com/KletoWorks/complex-md-action refs/tags/v0.1.0
+git ls-remote https://github.com/KletoWorks/complex-md-action refs/tags/v0.2.0
 ```
 
 ```yaml
-- uses: KletoWorks/complex-md-action@<the 40 character SHA> # v0.1.0
+- uses: KletoWorks/complex-md-action@<the 40 character SHA> # v0.2.0
 ```
 
 A tag can move to other code; a commit SHA cannot. The comment job has no
