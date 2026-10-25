@@ -25,6 +25,14 @@ test('the pinned CLI is an exact version from the npm registry with a sha512 int
   assert.match(CLI.integrity, /^sha512-[A-Za-z0-9+/]{86}==$/);
 });
 
+/* package.json names complex-md only so that Dependabot opens a pull
+   request for each release; the action installs nothing. The bump fails
+   here until src/cli.js carries the same version and its integrity. */
+test('the pin in src/cli.js is the complex-md version that package.json names', () => {
+  const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  assert.equal(pkg.devDependencies?.['complex-md'], CLI.version, 'move version, tarball and integrity in src/cli.js to the version in package.json');
+});
+
 test('a tarball that matches the pin is unpacked and its bin returned', async () => {
   const t = stubTarball('console.log("stub")\n');
   const dir = mkdtempSync(join(tmpdir(), 'cmda-cli-'));
@@ -44,4 +52,22 @@ test('a tarball that does not match the pin is refused and not unpacked', async 
 test('a failed download is an error', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'cmda-cli-'));
   await assert.rejects(fetchCli({ fetch: async () => new Response('no', { status: 503 }), dir }), /503/);
+});
+
+/* The one test that reaches the network: the published tarball must match
+   the pin, and its bin must start with no dependency installed, because
+   the action installs none. It skips only when the registry cannot be
+   reached at all; a wrong status or a wrong hash fails. */
+test('the published tarball matches the pin and its bin runs with no dependency', async (t) => {
+  let res;
+  try { res = await fetch(CLI.tarball); } catch (e) { return t.skip(`registry unreachable: ${e.cause?.code || e.message}`); }
+  assert.equal(res.status, 200, `GET ${CLI.tarball}`);
+  const bytes = Buffer.from(await res.arrayBuffer());
+  assert.equal(integrityOf(bytes), CLI.integrity);
+  const dir = mkdtempSync(join(tmpdir(), 'cmda-real-'));
+  const bin = await fetchCli({ fetch: async () => new Response(bytes, { status: 200 }), dir });
+  const help = execFileSync(process.execPath, [bin, '--help'], { encoding: 'utf8' });
+  assert.match(help, new RegExp(`^complex-md ${CLI.version.replace(/\./g, '\\.')}\\b`));
+  assert.match(help, /complex-md verify\b/, 'the bounds job runs verify when --help lists it');
+  assert.match(help, /complex-md impact <path>/);
 });

@@ -88,10 +88,12 @@ three files took 3.1 s, including the CLI download.
 - The bounds and COMPLEX.md come from the base branch. A pull request
   cannot loosen its own check by editing either one; its new copies apply
   after merge.
-- The CLI is complex-md 0.10.0, checked against the sha512 integrity that npm
+- The CLI is complex-md 0.11.0, checked against the sha512 integrity that npm
   published for it. It runs with no token in its env.
-- `verify: true` runs `complex-md verify`, the map drift check, once the
-  pinned CLI has that command. With 0.10.0 it warns and checks nothing.
+- `verify: true` runs `complex-md verify`, the map drift check. The job
+  fails when verify exits 1, a map that drifted past tolerance, or 2, a map
+  it cannot verify. verify reads history, so the bounds example checks out
+  with `fetch-depth: 0`.
 
 ## Inputs
 
@@ -120,7 +122,12 @@ the comment says so when a pull request has more.
 npm test
 ```
 
-The tests use fixture maps and file lists and a fake GitHub API. The parser
+The tests use fixture maps and file lists and a fake GitHub API. One test
+downloads the pinned CLI tarball from npm, checks it against the pin and
+runs its `--help`; it skips when the registry cannot be reached.
+`package.json` names complex-md as a devDependency only so that Dependabot
+opens a pull request for each release. A test fails on that pull request
+until `src/cli.js` pins the same version and its integrity. The parser
 in `src/vendor/complexmd.js` is a copy of the CLI's, with its source commit
 in the header.
 
